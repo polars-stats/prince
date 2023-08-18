@@ -1,5 +1,4 @@
 """Singular Value Decomposition (SVD)"""
-from __future__ import annotations
 
 import dataclasses
 
