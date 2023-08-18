@@ -1,11 +1,10 @@
 """Principal Component Analysis (PCA)"""
-from __future__ import annotations
 
 import functools
 
 import altair as alt
 import numpy as np
-import pandas as pd
+import polars as pl
 import sklearn.base
 import sklearn.utils
 from sklearn import preprocessing
@@ -16,7 +15,7 @@ from prince import svd, utils
 def select_active_variables(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "feature_names_in_") and isinstance(X, pd.DataFrame):
+        if hasattr(self, "feature_names_in_") and isinstance(X, pl.DataFrame):
             return method(self, X[self.feature_names_in_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -97,14 +96,14 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
                     with_std=self.rescale_with_std,
                 ).fit_transform(X_sup)
 
-        self._column_dist = pd.Series(
+        self._column_dist = pl.Series(
             (X_active**2 / len(X_active)).sum(axis=0), index=active_variables
         )
         if supplementary_columns:
-            self._column_dist = pd.concat(
+            self._column_dist = pl.concat(
                 (
                     self._column_dist,
-                    pd.Series(
+                    pl.Series(
                         (X_sup**2 / len(X_sup)).sum(axis=0),
                         index=supplementary_columns,
                     ),
@@ -121,15 +120,15 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
 
         self.total_inertia_ = np.sum(np.square(X_active)) / len(X_active)
 
-        self.column_coordinates_ = pd.DataFrame(
+        self.column_coordinates_ = pl.DataFrame(
             data=self.svd_.V.T * self.eigenvalues_**0.5,
             index=active_variables,
         )
         if supplementary_columns:
-            self.column_coordinates_ = pd.concat(
+            self.column_coordinates_ = pl.concat(
                 [
                     self.column_coordinates_,
-                    pd.DataFrame(
+                    pl.DataFrame(
                         data=X_sup.T @ (self.svd_.U / len(self.svd_.U) ** 0.5),
                         index=supplementary_columns,
                     ),
@@ -137,7 +136,7 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
             )
         self.column_coordinates_.columns.name = "component"
         self.column_coordinates_.index.name = "variable"
-        row_coords = pd.DataFrame(
+        row_coords = pl.DataFrame(
             (self.svd_.U * len(self.svd_.U) ** 0.5) * self.eigenvalues_**0.5,
             # HACK: there's a circular dependency between row_contributions_
             # and active_row_coordinates in self.__init__
@@ -179,7 +178,7 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
     @utils.check_is_dataframe_input
     @utils.check_is_fitted
     @select_active_variables
-    def row_coordinates(self, X: pd.DataFrame):
+    def row_coordinates(self, X: pl.DataFrame):
         """Returns the row principal coordinates.
 
         The row principal coordinates are obtained by projecting `X` on the right eigenvectors.
@@ -192,11 +191,11 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
 
         """
 
-        index = X.index if isinstance(X, pd.DataFrame) else None
+        index = X.index if isinstance(X, pl.DataFrame) else None
         X = self._scale(X)
         X = np.array(X, copy=self.copy)
 
-        coord = pd.DataFrame(data=X.dot(self.svd_.V.T), index=index)
+        coord = pl.DataFrame(data=X.dot(self.svd_.V.T), index=index)
         coord.columns.name = "component"
         return coord
 
@@ -246,12 +245,12 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
             return X_inv
 
         # Extract index
-        index = X.index if isinstance(X, pd.DataFrame) else None
-        return pd.DataFrame(data=X_inv, index=index)
+        index = X.index if isinstance(X, pl.DataFrame) else None
+        return pl.DataFrame(data=X_inv, index=index)
 
     @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_standard_coordinates(self, X: pd.DataFrame = None):
+    def row_standard_coordinates(self, X: pl.DataFrame = None):
         """Returns the row standard coordinates.
 
         The row standard coordinates are obtained by dividing each row principal coordinate by it's
@@ -321,7 +320,7 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
 
         params["tooltip"] = (
             X.index.names
-            if isinstance(X.index, pd.MultiIndex)
+            if isinstance(X.index, pl.MultiIndex)
             else [X.index.name or "index"]  # index is the default name
         ) + [
             f"component {x_component}",
