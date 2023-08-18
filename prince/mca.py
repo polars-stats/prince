@@ -1,8 +1,7 @@
 """Multiple Correspondence Analysis (MCA)"""
-from __future__ import annotations
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import sklearn.base
 import sklearn.utils
 
@@ -34,7 +33,7 @@ class MCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, ca.CA):
 
     def _prepare(self, X):
         if self.one_hot:
-            X = pd.get_dummies(X, columns=X.columns)
+            X = pl.get_dummies(X, columns=X.columns)
         return X
 
     @utils.check_is_dataframe_input
