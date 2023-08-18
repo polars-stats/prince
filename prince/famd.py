@@ -1,8 +1,7 @@
 """Factor Analysis of Mixed Data (FAMD)"""
-from __future__ import annotations
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import sklearn.utils
 from sklearn import preprocessing
 
@@ -56,7 +55,7 @@ class FAMD(pca.PCA):
         self.cat_scaler_ = preprocessing.OneHotEncoder(handle_unknown=self.handle_unknown).fit(
             X_cat
         )
-        X_cat_oh = pd.DataFrame.sparse.from_spmatrix(
+        X_cat_oh = pl.DataFrame.sparse.from_spmatrix(
             self.cat_scaler_.transform(X_cat),
             index=X_cat.index,
             columns=self.cat_scaler_.get_feature_names_out(self.cat_cols_),
@@ -69,7 +68,7 @@ class FAMD(pca.PCA):
         # TODO: In the future, PCA should be able to handle sparse matrices.
         X_cat_oh_norm = X_cat_oh_norm.sparse.to_dense()
 
-        Z = pd.concat([X_num, X_cat_oh_norm], axis=1)
+        Z = pl.concat([X_num, X_cat_oh_norm], axis=1)
         super().fit(Z)
 
         # Determine column_coordinates_
@@ -77,7 +76,7 @@ class FAMD(pca.PCA):
         rc = self.row_coordinates(X)
         weights = np.ones(len(X_cat_oh)) / len(X_cat_oh)
         norm = (rc**2).multiply(weights, axis=0).sum()
-        eta2 = pd.DataFrame(index=rc.columns)
+        eta2 = pl.DataFrame(index=rc.columns)
         for i, col in enumerate(self.cat_cols_):
             # TODO: there must be a better way to select a subset of the one-hot encoded matrix
             tt = X_cat_oh[[f"{col}_{i}" for i in self.cat_scaler_.categories_[i]]]
@@ -85,7 +84,7 @@ class FAMD(pca.PCA):
             eta2[col] = (
                 rc.apply(lambda x: (tt.multiply(x * weights, axis=0).sum() ** 2 / ni).sum()) / norm
             ).values
-        self.column_coordinates_ = pd.concat(
+        self.column_coordinates_ = pl.concat(
             [self.column_coordinates_.loc[self.num_cols_] ** 2, eta2.T]
         )
         self.column_coordinates_.columns.name = "component"
@@ -104,7 +103,7 @@ class FAMD(pca.PCA):
         X_num[:] = self.num_scaler_.transform(X_num)
 
         # Preprocess categorical columns
-        X_cat = pd.DataFrame.sparse.from_spmatrix(
+        X_cat = pl.DataFrame.sparse.from_spmatrix(
             self.cat_scaler_.transform(X_cat),
             index=X_cat.index,
             columns=self.cat_scaler_.get_feature_names_out(self.cat_cols_),
@@ -112,7 +111,7 @@ class FAMD(pca.PCA):
         prop = X_cat.sum() / X_cat.sum().sum() * 2
         X_cat = X_cat.sub(X_cat.mean(axis="rows")).div(prop**0.5, axis="columns")
 
-        Z = pd.concat([X_num, X_cat], axis=1)
+        Z = pl.concat([X_num, X_cat], axis=1)
 
         return super().row_coordinates(Z)
 
