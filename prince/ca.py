@@ -49,8 +49,7 @@ class CA(utils.EigenvaluesMixin):
         self.random_state = random_state
         self.engine = engine
 
-    @utils.check_is_dataframe_input
-    def fit(self, X, y=None):
+    def fit(self, X: pl.DataFrame, y=None):
         # Check input
         if self.check_input:
             check_array(X)
@@ -132,9 +131,8 @@ class CA(utils.EigenvaluesMixin):
         """Returns the eigenvalues associated with each principal component."""
         return np.square(self.svd_.s)
 
-    @utils.check_is_dataframe_input
     @select_active_columns
-    def row_coordinates(self, X):
+    def row_coordinates(self, X: pl.DataFrame):
         """The row principal coordinates."""
 
         _, row_names, _, _ = utils.make_labels_and_names(X)
@@ -160,9 +158,8 @@ class CA(utils.EigenvaluesMixin):
             index=pl.Index(row_names, name=index_name),
         )
 
-    @utils.check_is_dataframe_input
     @select_active_columns
-    def row_cosine_similarities(self, X):
+    def row_cosine_similarities(self, X: pl.DataFrame):
         """Return the cos2 for each row against the dimensions.
 
         The cos2 value gives an indicator of the accuracy of the row projection on the dimension.
@@ -194,9 +191,8 @@ class CA(utils.EigenvaluesMixin):
         # Can't use pandas.div method because it doesn't support duplicate indices
         return F**2 / dist2_row.to_numpy()[:, None]
 
-    @utils.check_is_dataframe_input
     @select_active_rows
-    def column_coordinates(self, X):
+    def column_coordinates(self, X: pl.DataFrame):
         """The column principal coordinates."""
 
         _, _, _, col_names = utils.make_labels_and_names(X)
@@ -223,9 +219,8 @@ class CA(utils.EigenvaluesMixin):
             index=pl.Index(col_names, name=index_name),
         )
 
-    @utils.check_is_dataframe_input
     @select_active_rows
-    def column_cosine_similarities(self, X):
+    def column_cosine_similarities(self, X: pl.DataFrame):
         """Return the cos2 for each column against the dimensions.
 
         The cos2 value gives an indicator of the accuracy of the column projection on the dimension.
@@ -254,9 +249,8 @@ class CA(utils.EigenvaluesMixin):
         dist2_col = pl.concat((dist2_col, dist2_col_sup))
         return (G**2).div(dist2_col, axis=0)
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def plot(self, X, x_component=0, y_component=1, **params):
+    def plot(self, X: pl.DataFrame, x_component=0, y_component=1, **params):
         row_coords = self.row_coordinates(X)
         row_coords.columns = [f"component {i}" for i in row_coords.columns]
         row_coords = row_coords.assign(

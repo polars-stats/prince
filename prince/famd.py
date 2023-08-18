@@ -35,8 +35,7 @@ class FAMD(pca.PCA):
         if self.check_input:
             sklearn.utils.check_array(X, dtype=[str, np.number])
 
-    @utils.check_is_dataframe_input
-    def fit(self, X, y=None):
+    def fit(self, X: pl.DataFrame, y=None):
         # Separate numerical columns from categorical columns
         self.num_cols_ = X.select_dtypes(include=["float"]).columns.tolist()
         if not self.num_cols_:
@@ -92,9 +91,8 @@ class FAMD(pca.PCA):
 
         return self
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_coordinates(self, X):
+    def row_coordinates(self, X: pl.DataFrame):
         # Separate numerical columns from categorical columns
         X_num = X[self.num_cols_].copy()
         X_cat = X[self.cat_cols_]
@@ -115,29 +113,24 @@ class FAMD(pca.PCA):
 
         return super().row_coordinates(Z)
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def inverse_transform(self, X):
+    def inverse_transform(self, X: pl.DataFrame):
         raise NotImplementedError("FAMD inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_standard_coordinates(self, X):
+    def row_standard_coordinates(self, X: pl.DataFrame):
         raise NotImplementedError("FAMD inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_cosine_similarities(self, X):
+    def row_cosine_similarities(self, X: pl.DataFrame):
         raise NotImplementedError("FAMD inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_correlations(self, X):
+    def column_correlations(self, X: pl.DataFrame):
         raise NotImplementedError("FAMD inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_cosine_similarities_(self, X):
+    def column_cosine_similarities_(self, X: pl.DataFrame):
         raise NotImplementedError("FAMD inherits from PCA, but this method is not implemented yet")
 
     @property

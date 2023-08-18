@@ -36,8 +36,7 @@ class MFA(pca.PCA, collections.UserDict):
         if self.check_input:
             sklearn.utils.check_array(X, dtype=[str, np.number])
 
-    @utils.check_is_dataframe_input
-    def fit(self, X, y=None, groups=None):
+    def fit(self, X: pl.DataFrame, y=None, groups=None):
         # Checks groups are provided
         self.groups_ = self._determine_groups(X, groups)
 
@@ -108,9 +107,8 @@ class MFA(pca.PCA, collections.UserDict):
         """Returns the eigenvalues associated with each principal component."""
         return np.square(self.svd_.s)
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_coordinates(self, X):
+    def row_coordinates(self, X: pl.DataFrame):
         """Returns the row principal coordinates."""
 
         if (X.index != self.row_contributions_.index).any():
@@ -127,9 +125,8 @@ class MFA(pca.PCA, collections.UserDict):
 
         return (Z @ Z.T) @ (M[:, np.newaxis] ** (-0.5) * U * s**-1)
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def group_row_coordinates(self, X):
+    def group_row_coordinates(self, X: pl.DataFrame):
         if (X.index != self.row_contributions_.index).any():
             raise NotImplementedError("Supplementary rows are not supported yet")
 
@@ -160,34 +157,28 @@ class MFA(pca.PCA, collections.UserDict):
             axis="columns",
         )
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_coordinates(self, X):
+    def column_coordinates(self, X: pl.DataFrame):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def inverse_transform(self, X):
+    def inverse_transform(self, X: pl.DataFrame):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_standard_coordinates(self, X):
+    def row_standard_coordinates(self, X: pl.DataFrame):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_cosine_similarities(self, X):
+    def row_cosine_similarities(self, X: pl.DataFrame):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_correlations(self, X):
+    def column_correlations(self, X: pl.DataFrame):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_cosine_similarities_(self, X):
+    def column_cosine_similarities_(self, X: pl.DataFrame):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
     @property
@@ -195,9 +186,8 @@ class MFA(pca.PCA, collections.UserDict):
     def column_contributions_(self):
         raise NotImplementedError("MFA inherits from PCA, but this method is not implemented yet")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def plot(self, X, x_component=0, y_component=1, color_by=None, **params):
+    def plot(self, X: pl.DataFrame, x_component=0, y_component=1, color_by=None, **params):
         if color_by is not None:
             params["color"] = color_by
 

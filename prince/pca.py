@@ -66,8 +66,7 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         if self.check_input:
             sklearn.utils.check_array(X)
 
-    @utils.check_is_dataframe_input
-    def fit(self, X, y=None, supplementary_columns=None):
+    def fit(self, X: pl.DataFrame, y=None, supplementary_columns=None):
         self._check_input(X)
 
         supplementary_columns = supplementary_columns or []
@@ -175,7 +174,6 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
 
         return X
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
     @select_active_variables
     def row_coordinates(self, X: pl.DataFrame):
@@ -199,9 +197,8 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         coord.columns.name = "component"
         return coord
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def transform(self, X, as_array=False):
+    def transform(self, X: pl.DataFrame, as_array=False):
         """Computes the row principal coordinates of a dataset.
 
         Same as calling `row_coordinates`. This is just for compatibility with
@@ -212,8 +209,7 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         rc = self.row_coordinates(X)
         return rc.to_numpy() if as_array else rc
 
-    @utils.check_is_dataframe_input
-    def fit_transform(self, X, as_array=False):
+    def fit_transform(self, X: pl.DataFrame, as_array=False):
         """A faster way to fit/transform.
 
         This methods produces exactly the same result as calling `fit(X)` followed
@@ -227,9 +223,8 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         rc = self.row_coordinates(X)
         return rc.to_numpy() if as_array else rc
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def inverse_transform(self, X, as_array=False):
+    def inverse_transform(self, X: pl.DataFrame, as_array=False):
         """Transforms row projections back to their original space.
 
         In other words, return a dataset whose transform would be X.
@@ -248,7 +243,6 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         index = X.index if isinstance(X, pl.DataFrame) else None
         return pl.DataFrame(data=X_inv, index=index)
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
     def row_standard_coordinates(self, X: pl.DataFrame = None):
         """Returns the row standard coordinates.
@@ -259,10 +253,9 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         """
         return self.row_coordinates(X).div(self.eigenvalues_, axis="columns")
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
     @select_active_variables
-    def row_cosine_similarities(self, X):
+    def row_cosine_similarities(self, X: pl.DataFrame):
         """Returns the cosine similarities between the rows and their principal components.
 
         The row cosine similarities are obtained by calculating the cosine of the angle shaped by
@@ -303,11 +296,10 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
             self.eigenvalues_, axis=1
         )
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
     def plot(
         self,
-        X,
+        X: pl.DataFrame,
         x_component=0,
         y_component=1,
         color_by=None,
