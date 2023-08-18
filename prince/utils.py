@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import functools
 
 import altair as alt
 import numpy as np
-import pandas as pd
+import polars as pl
 from sklearn.utils import validation
 
 
@@ -21,7 +19,7 @@ def check_is_dataframe_input(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         X = args[1]  # Assuming the first argument is 'self' or an instance
-        if not isinstance(X, pd.DataFrame):
+        if not isinstance(X, pl.DataFrame):
             raise ValueError(
                 f"The X argument must be a pandas DataFrame, but got {type(X).__name__}"
             )
@@ -31,7 +29,7 @@ def check_is_dataframe_input(func):
 
 
 def make_labels_and_names(X):
-    if isinstance(X, pd.DataFrame):
+    if isinstance(X, pl.DataFrame):
         row_label = X.index.name if X.index.name else "Rows"
         row_names = X.index.tolist()
         col_label = X.columns.name if X.columns.name else "Columns"
@@ -62,13 +60,13 @@ class EigenvaluesMixin:
     @check_is_fitted
     def _eigenvalues_summary(self):
         """Return a summary of the eigenvalues and their importance."""
-        return pd.DataFrame(
+        return pl.DataFrame(
             {
                 "eigenvalue": self.eigenvalues_,
                 r"% of variance": self.percentage_of_variance_,
                 r"% of variance (cumulative)": self.cumulative_percentage_of_variance_,
             },
-            index=pd.RangeIndex(0, len(self.eigenvalues_), name="component"),
+            index=pl.RangeIndex(0, len(self.eigenvalues_), name="component"),
         )
 
     @property
