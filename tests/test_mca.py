@@ -3,7 +3,7 @@ from __future__ import annotations
 import tempfile
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import pytest
 from rpy2.robjects import r as R
 
@@ -62,7 +62,7 @@ class TestMCA(_TestCA):
         if self.sup_cols:
             F = load_df_from_R("ca$var$coord")
             if self.sup_cols:
-                F = pd.concat((F, load_df_from_R("ca$quali.sup$coord")))
+                F = pl.concat((F, load_df_from_R("ca$quali.sup$coord")))
             P = self.ca.column_coordinates(self.dataset)
             np.testing.assert_allclose(F.abs(), P.abs())
         else:
@@ -72,7 +72,7 @@ class TestMCA(_TestCA):
         if self.sup_cols:
             F = load_df_from_R("ca$var$cos2")
             if self.sup_cols:
-                F = pd.concat((F, load_df_from_R("ca$quali.sup$cos2")))
+                F = pl.concat((F, load_df_from_R("ca$quali.sup$cos2")))
             P = self.ca.column_cosine_similarities(self.dataset)
             np.testing.assert_allclose(F, P)
         else:
@@ -82,7 +82,7 @@ class TestMCA(_TestCA):
 def test_with_and_without_one_hot():
     """
 
-    >>> df = pd.DataFrame({
+    >>> df = pl.DataFrame({
     ...     "foo": [1, 2, 3, 3, 5],
     ...     "bar": ["a", "b", "c", "b", "e"],
     ... })
@@ -97,7 +97,7 @@ def test_with_and_without_one_hot():
     4  1.94  0.5
 
     >>> mca = prince.MCA(n_components=2, one_hot=False, engine="scipy")
-    >>> one_hot = pd.get_dummies(df, columns=['foo', 'bar'])
+    >>> one_hot = pl.get_dummies(df, columns=['foo', 'bar'])
     >>> mca = mca.fit(one_hot)
     >>> mca.transform(one_hot).round(2).abs().sort_index(axis='columns')
           0    1
@@ -115,7 +115,7 @@ def test_issue_131():
 
     https://github.com/MaxHalford/prince/issues/131#issuecomment-1591426031
 
-    >>> df = pd.DataFrame({
+    >>> df = pl.DataFrame({
     ...     "foo": [1, 2, 3, 3, 5],
     ...     "bar": ["a", "b", "c", "b", "e"],
     ... })

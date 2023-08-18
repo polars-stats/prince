@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 import numpy as np
-import pandas as pd
+import polars as pl
 
 import prince
 
@@ -87,7 +87,7 @@ class TestGPA(unittest.TestCase):
 
     def test_xarray(self):
 
-        points = pd.DataFrame(
+        points = pl.DataFrame(
             data=[
                 [0, 0, 0, 0],
                 [0, 2, 0, 1],
