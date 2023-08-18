@@ -5,7 +5,7 @@ import functools
 
 import altair as alt
 import numpy as np
-import pandas as pd
+import polars as pl
 from scipy import sparse
 from sklearn.utils import check_array
 
@@ -15,7 +15,7 @@ from prince import svd, utils
 def select_active_columns(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "active_cols_") and isinstance(X, pd.DataFrame):
+        if hasattr(self, "active_cols_") and isinstance(X, pl.DataFrame):
             return method(self, X[self.active_cols_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -25,7 +25,7 @@ def select_active_columns(method):
 def select_active_rows(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "active_rows_") and isinstance(X, pd.DataFrame):
+        if hasattr(self, "active_rows_") and isinstance(X, pl.DataFrame):
             return method(self, X.loc[self.active_rows_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -61,7 +61,7 @@ class CA(utils.EigenvaluesMixin):
 
         _, row_names, _, col_names = utils.make_labels_and_names(X)
 
-        if isinstance(X, pd.DataFrame):
+        if isinstance(X, pl.DataFrame):
             X = X.to_numpy()
 
         if self.copy:
@@ -71,8 +71,8 @@ class CA(utils.EigenvaluesMixin):
         X = X.astype(float) / np.sum(X)
 
         # Compute row and column masses
-        self.row_masses_ = pd.Series(X.sum(axis=1), index=row_names)
-        self.col_masses_ = pd.Series(X.sum(axis=0), index=col_names)
+        self.row_masses_ = pl.Series(X.sum(axis=1), index=row_names)
+        self.col_masses_ = pl.Series(X.sum(axis=0), index=col_names)
 
         self.active_rows_ = self.row_masses_.index.unique()
         self.active_cols_ = self.col_masses_.index.unique()
@@ -94,7 +94,7 @@ class CA(utils.EigenvaluesMixin):
         # Compute total inertia
         self.total_inertia_ = np.einsum("ij,ji->", S, S.T)
 
-        self.row_contributions_ = pd.DataFrame(
+        self.row_contributions_ = pl.DataFrame(
             sparse.diags(self.row_masses_.values)
             @ (
                 # Same as row_coordinates(X)
@@ -109,7 +109,7 @@ class CA(utils.EigenvaluesMixin):
             index=self.row_masses_.index,
         )
 
-        self.column_contributions_ = pd.DataFrame(
+        self.column_contributions_ = pl.DataFrame(
             sparse.diags(self.col_masses_.values)
             @ (
                 # Same as col_coordinates(X)
@@ -140,7 +140,7 @@ class CA(utils.EigenvaluesMixin):
         _, row_names, _, _ = utils.make_labels_and_names(X)
         index_name = X.index.name
 
-        if isinstance(X, pd.DataFrame):
+        if isinstance(X, pl.DataFrame):
             try:
                 X = X.sparse.to_coo().astype(float)
             except AttributeError:
@@ -155,9 +155,9 @@ class CA(utils.EigenvaluesMixin):
         else:
             X = X / X.sum(axis=1)
 
-        return pd.DataFrame(
+        return pl.DataFrame(
             data=X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
-            index=pd.Index(row_names, name=index_name),
+            index=pl.Index(row_names, name=index_name),
         )
 
     @utils.check_is_dataframe_input
@@ -189,7 +189,7 @@ class CA(utils.EigenvaluesMixin):
         X_sup = X_sup.div(X_sup.sum(axis=1), axis=0)
         dist2_row_sup = ((X_sup - marge_col) ** 2).div(marge_col, axis=1).sum(axis=1)
 
-        dist2_row = pd.concat((dist2_row, dist2_row_sup))
+        dist2_row = pl.concat((dist2_row, dist2_row_sup))
 
         # Can't use pandas.div method because it doesn't support duplicate indices
         return F**2 / dist2_row.to_numpy()[:, None]
@@ -202,8 +202,8 @@ class CA(utils.EigenvaluesMixin):
         _, _, _, col_names = utils.make_labels_and_names(X)
         index_name = X.columns.name
 
-        if isinstance(X, pd.DataFrame):
-            is_sparse = X.dtypes.apply(pd.api.types.is_sparse).all()
+        if isinstance(X, pl.DataFrame):
+            is_sparse = X.dtypes.apply(pl.api.types.is_sparse).all()
             if is_sparse:
                 X = X.sparse.to_coo()
             else:
@@ -218,9 +218,9 @@ class CA(utils.EigenvaluesMixin):
         else:
             X = X.T / X.T.sum(axis=1)
 
-        return pd.DataFrame(
+        return pl.DataFrame(
             data=X @ sparse.diags(self.row_masses_.to_numpy() ** -0.5) @ self.svd_.U,
-            index=pd.Index(col_names, name=index_name),
+            index=pl.Index(col_names, name=index_name),
         )
 
     @utils.check_is_dataframe_input
@@ -251,7 +251,7 @@ class CA(utils.EigenvaluesMixin):
         X_sup = X_sup.div(X_sup.sum(axis=0), axis=1)
         dist2_col_sup = ((X_sup.sub(marge_row, axis=0)) ** 2).div(marge_row, axis=0).sum(axis=0)
 
-        dist2_col = pd.concat((dist2_col, dist2_col_sup))
+        dist2_col = pl.concat((dist2_col, dist2_col_sup))
         return (G**2).div(dist2_col, axis=0)
 
     @utils.check_is_dataframe_input
@@ -270,7 +270,7 @@ class CA(utils.EigenvaluesMixin):
             value=col_coords.index.astype(str),
         )
 
-        coords = pd.concat([row_coords, col_coords])
+        coords = pl.concat([row_coords, col_coords])
         eig = self._eigenvalues_summary.to_dict(orient="index")
 
         return (
