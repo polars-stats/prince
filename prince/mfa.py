@@ -1,11 +1,10 @@
 """Multiple Factor Analysis (MFA)"""
-from __future__ import annotations
 
 import collections
 
 import altair as alt
 import numpy as np
-import pandas as pd
+import polars as pl
 import sklearn.utils
 
 from prince import pca, utils
@@ -48,8 +47,8 @@ class MFA(pca.PCA, collections.UserDict):
         # Check group types are consistent
         self.all_nums_ = {}
         for name, cols in sorted(self.groups_.items()):
-            all_num = all(pd.api.types.is_numeric_dtype(X[c]) for c in cols)
-            all_cat = all(pd.api.types.is_string_dtype(X[c]) for c in cols)
+            all_num = all(pl.api.types.is_numeric_dtype(X[c]) for c in cols)
+            all_cat = all(pl.api.types.is_string_dtype(X[c]) for c in cols)
             if not (all_num or all_cat):
                 raise ValueError(f'Not all columns in "{name}" group are of the same type')
             self.all_nums_[name] = all_num
@@ -74,7 +73,7 @@ class MFA(pca.PCA, collections.UserDict):
             self[name] = fa.fit(X.loc[:, cols])
 
         # Fit the global PCA
-        Z = pd.concat(
+        Z = pl.concat(
             (X[cols] / self[g].eigenvalues_[0] ** 0.5 for g, cols in self.groups_.items()),
             axis="columns",
         )
@@ -90,7 +89,7 @@ class MFA(pca.PCA, collections.UserDict):
         if provided_groups is None:
             raise ValueError("Groups have to be specified")
         if isinstance(provided_groups, list):
-            if not isinstance(X.columns, pd.MultiIndex):
+            if not isinstance(X.columns, pl.MultiIndex):
                 raise ValueError("Groups have to be provided as a dict when X is not a MultiIndex")
             groups = {
                 g: [
@@ -118,7 +117,7 @@ class MFA(pca.PCA, collections.UserDict):
             raise NotImplementedError("Supplementary rows are not supported yet")
 
         X = (X - X.mean()) / ((X - X.mean()) ** 2).sum() ** 0.5
-        Z = pd.concat(
+        Z = pl.concat(
             (X[cols] / self[g].eigenvalues_[0] ** 0.5 for g, cols in self.groups_.items()),
             axis="columns",
         )
@@ -135,7 +134,7 @@ class MFA(pca.PCA, collections.UserDict):
             raise NotImplementedError("Supplementary rows are not supported yet")
 
         X = (X - X.mean()) / ((X - X.mean()) ** 2).sum() ** 0.5
-        Z = pd.concat(
+        Z = pl.concat(
             (X[cols] / self[g].eigenvalues_[0] ** 0.5 for g, cols in self.groups_.items()),
             axis="columns",
         )
@@ -144,13 +143,13 @@ class MFA(pca.PCA, collections.UserDict):
         s = self.svd_.s
 
         def add_index(g, group_name):
-            g.columns = pd.MultiIndex.from_tuples(
+            g.columns = pl.MultiIndex.from_tuples(
                 [(group_name, col) for col in g.columns],
                 names=("group", "component"),
             )
             return g
 
-        return len(self.groups_) * pd.concat(
+        return len(self.groups_) * pl.concat(
             [
                 add_index(
                     g=(Z[g] @ Z[g].T) @ (M[:, np.newaxis] ** (-0.5) * U * s**-1),
@@ -202,7 +201,7 @@ class MFA(pca.PCA, collections.UserDict):
         if color_by is not None:
             params["color"] = color_by
 
-        params["tooltip"] = (X.index.names if isinstance(X.index, pd.MultiIndex) else ["index"]) + [
+        params["tooltip"] = (X.index.names if isinstance(X.index, pl.MultiIndex) else ["index"]) + [
             f"component {x_component}",
             f"component {y_component}",
         ]
