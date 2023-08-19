@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import tempfile
 
 import numpy as np
@@ -81,7 +79,6 @@ class TestMCA(_TestCA):
 
 def test_with_and_without_one_hot():
     """
-
     >>> df = pl.DataFrame({
     ...     "foo": [1, 2, 3, 3, 5],
     ...     "bar": ["a", "b", "c", "b", "e"],
@@ -112,7 +109,6 @@ def test_with_and_without_one_hot():
 
 def test_issue_131():
     """
-
     https://github.com/MaxHalford/prince/issues/131#issuecomment-1591426031
 
     >>> df = pl.DataFrame({
@@ -137,14 +133,12 @@ def test_issue_131():
 
 def test_type_doesnt_matter():
     """
-
     Checks that the type of the columns doesn't affect the result.
-
     """
     outputs = []
     dataset = prince.datasets.load_hearthstone_cards().head(100)
     for col in dataset.columns:
-        labels, levels = pd.factorize(dataset[col])
+        labels, levels = pl.factorize(dataset[col])
         dataset[col] = labels
     for typ in ("int", "float", "str", "category"):
         dataset = dataset.astype(typ)
