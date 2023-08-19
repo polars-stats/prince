@@ -1,13 +1,11 @@
-from __future__ import annotations
-
 import pathlib
 
-import pandas as pd
+import polars as pl
 
 DATASETS_DIR = pathlib.Path(__file__).parent / "datasets"
 
 
-def load_energy_mix(year=2019, normalize=True):
+def load_energy_mix(year=2019, normalize=True) -> pl.DataFrame:
     """Per capita energy mix by country in 2019.
 
     Each row corresponds to a country. There is one column for each energy source.
@@ -26,9 +24,9 @@ def load_energy_mix(year=2019, normalize=True):
     """
 
     df = (
-        pd.read_csv(DATASETS_DIR / "per-capita-energy-stacked.csv")
-        .query("Year == @year")
-        .query("Entity not in ['Africa', 'Europe', 'North America', 'World']")
+        pl.read_csv(DATASETS_DIR / "per-capita-energy-stacked.csv")
+        .filter(pl.col('Year') == year)
+        .filter(pl.col('Entity').is_not_in(['Africa', 'Europe', 'North America', 'World']))
         .drop(columns=["Code", "Year"])
         .rename(columns={"Entity": "Country"})
         .rename(columns=lambda x: x.replace(" per capita (kWh)", "").lower())
@@ -41,7 +39,7 @@ def load_energy_mix(year=2019, normalize=True):
 
 def load_decathlon():
     """The Decathlon dataset from FactoMineR."""
-    decathlon = pd.read_csv(DATASETS_DIR / "decathlon.csv")
+    decathlon = pl.read_csv(DATASETS_DIR / "decathlon.csv")
     decathlon.columns = ["athlete", *map(str.lower, decathlon.columns[1:])]
     decathlon.athlete = decathlon.athlete.apply(str.title)
     decathlon = decathlon.set_index(["competition", "athlete"])
@@ -58,7 +56,7 @@ def load_french_elections():
     [on Wikipedia](https://www.wikiwand.com/fr/Région_française).
 
     """
-    dataset = pd.read_csv(DATASETS_DIR / "02-resultats-par-region.csv")
+    dataset = pl.read_csv(DATASETS_DIR / "02-resultats-par-region.csv")
     cont = dataset.pivot(index="reg_name", columns="cand_nom", values="cand_nb_voix")
     cont["Abstention"] = dataset.groupby("reg_name")["abstention_nb"].min()
     cont["Blank"] = dataset.groupby("reg_name")["blancs_nb"].min()
@@ -70,7 +68,7 @@ def load_french_elections():
 
 def load_punctuation_marks():
     """Punctuation marks of six French writers."""
-    return pd.read_csv(DATASETS_DIR / "punctuation_marks.csv", index_col="author")
+    return pl.read_csv(DATASETS_DIR / "punctuation_marks.csv")
 
 
 def load_hearthstone_cards():
@@ -79,7 +77,7 @@ def load_hearthstone_cards():
     Source: https://gist.github.com/MaxHalford/32ed2c80672d7391ec5b4e6f291f14c1
 
     """
-    return pd.read_csv(DATASETS_DIR / "hearthstone_cards.csv", index_col="id")
+    return pl.read_csv(DATASETS_DIR / "hearthstone_cards.csv")
 
 
 def load_burgundy_wines():
@@ -88,7 +86,7 @@ def load_burgundy_wines():
     Source: https://personal.utdallas.edu/~herve/Abdi-MCA2007-pretty.pdf
 
     """
-    wines = pd.DataFrame(
+    wines = pl.DataFrame(
         data=[
             [1, 6, 7, 2, 5, 7, 6, 3, 6, 7],
             [5, 3, 2, 4, 4, 4, 2, 4, 4, 3],
@@ -97,7 +95,7 @@ def load_burgundy_wines():
             [2, 5, 4, 3, 5, 6, 5, 2, 6, 6],
             [3, 4, 4, 3, 5, 4, 5, 1, 7, 5],
         ],
-        columns=pd.MultiIndex.from_tuples(
+        columns=pl.MultiIndex.from_tuples(
             [
                 ("Expert 1", "Fruity"),
                 ("Expert 1", "Woody"),
@@ -124,4 +122,4 @@ def load_beers():
     The data is taken from https://github.com/philipperemy/beer-dataset.
 
     """
-    return pd.read_csv(DATASETS_DIR / "beers.csv.zip", index_col="name")
+    return pl.read_csv(DATASETS_DIR / "beers.csv.zip")
