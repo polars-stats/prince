@@ -1,7 +1,6 @@
-import pytest
-
 import numpy as np
 import polars as pl
+import pytest
 
 import prince
 
