@@ -158,7 +158,7 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         if not hasattr(self, "scaler_"):
             return X
 
-        if sup_variables := X.columns.difference(self.feature_names_in_, sort=False).tolist():
+        if sup_variables := X[pl.exclude(self.feature_names_in_)].columns:
             X = np.concatenate(
                 (
                     self.scaler_.transform(X[self.feature_names_in_].to_numpy()),
