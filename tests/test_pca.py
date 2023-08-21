@@ -1,6 +1,6 @@
 import math
 
-import numpy as np
+import jax.numpy as np
 import polars as pl
 import pytest
 import rpy2.robjects as robjects
