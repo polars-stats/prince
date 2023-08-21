@@ -54,7 +54,7 @@ class CA(utils.EigenvaluesMixin):
             check_array(X)
 
         # Check all values are positive
-        if (X < 0).any().any():
+        if (X < 0).select(pl.any_horizontal(pl.all())).to_series().any():
             raise ValueError("All values in X should be positive")
 
         _, row_names, _, col_names = utils.make_labels_and_names(X)
