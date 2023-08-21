@@ -19,8 +19,8 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: pip3 install . --no-interaction --no-root
+      # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: pip3 install --yes --no-root .
 
     - name: Install xarray
       shell: bash
@@ -37,7 +37,7 @@ runs:
 
     - name: Install project
       shell: bash
-      run: pip3 install . --no-interaction
+      run: pip3 install --yes .
 
     - name: Activate environment
       shell: bash
