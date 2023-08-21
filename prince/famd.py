@@ -51,7 +51,9 @@ class FAMD(pca.PCA):
 
         # Preprocess categorical columns
         X_cat = X[self.cat_cols_]
-        self.cat_scaler_ = preprocessing.OneHotEncoder(handle_unknown=self.handle_unknown).fit(X_cat)
+        self.cat_scaler_ = preprocessing \
+            .OneHotEncoder(handle_unknown=self.handle_unknown) \
+            .fit(X_cat)
         X_cat_oh = pl.DataFrame.sparse.from_spmatrix(
             self.cat_scaler_.transform(X_cat),
             index=X_cat.index,
