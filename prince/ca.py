@@ -101,7 +101,6 @@ class CA(utils.EigenvaluesMixin):
                 ** 2
             )
             / self.eigenvalues_,
-            index=self.row_masses_.index,
         )
 
         self.column_contributions_ = pl.DataFrame(
@@ -116,7 +115,6 @@ class CA(utils.EigenvaluesMixin):
                 ** 2
             )
             / self.eigenvalues_,
-            index=self.col_masses_.index,
         )
 
         return self
@@ -140,10 +138,7 @@ class CA(utils.EigenvaluesMixin):
             X = X.copy()
 
         # Normalise the rows so that they sum up to 1
-        if isinstance(X, np.ndarray):
-            X = X / X.sum(axis=1)[:, None]
-        else:
-            X = X / X.sum(axis=1)
+        X = X / X.sum(axis=1)
 
         return pl.DataFrame(
             X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
@@ -164,7 +159,7 @@ class CA(utils.EigenvaluesMixin):
         return self._row_cosine_similarities(X, F)
 
     @select_active_columns
-    def _row_cosine_similarities(self, X, F):
+    def _row_cosine_similarities(self, X: pl.DataFrame, F):
         # Active
         X_act = X.loc[self.active_rows_]
         X_act = X_act / X_act.sum().sum()
@@ -183,31 +178,23 @@ class CA(utils.EigenvaluesMixin):
         return F**2 / dist2_row.to_numpy()[:, None]
 
     @select_active_rows
-    def column_coordinates(self, X: pl.DataFrame):
+    def column_coordinates(self, X: pl.DataFrame) -> pl.DataFrame:
         """The column principal coordinates."""
 
-        _, _, _, col_names = utils.make_labels_and_names(X)
-        index_name = X.columns.name
-
-        if isinstance(X, pl.DataFrame):
-            is_sparse = X.dtypes.apply(pl.api.types.is_sparse).all()
-            if is_sparse:
-                X = X.sparse.to_coo()
-            else:
-                X = X.to_numpy()
+        is_sparse = X.dtypes.apply(pl.api.types.is_sparse).all()
+        if is_sparse:
+            X = X.sparse.to_coo()
+        else:
+            X = X.to_numpy()
 
         if self.copy:
             X = X.copy()
 
         # Transpose and make sure the rows sum up to 1
-        if isinstance(X, np.ndarray):
-            X = X.T / X.T.sum(axis=1)[:, None]
-        else:
-            X = X.T / X.T.sum(axis=1)
+        X = X.T / X.T.sum(axis=1)
 
         return pl.DataFrame(
-            data=X @ sparse.diags(self.row_masses_.to_numpy() ** -0.5) @ self.svd_.U,
-            index=pl.Index(col_names, name=index_name),
+            X @ sparse.diags(self.row_masses_.to_numpy() ** -0.5) @ self.svd_.U,
         )
 
     @select_active_rows
