@@ -56,12 +56,14 @@ def load_french_elections():
 
     """
     dataset = pl.read_csv(DATASETS_DIR / "02-resultats-par-region.csv")
-    cont = dataset \
-        .pivot(values='cand_nb_voix', index='reg_name', columns='cand_nom') \
-        .groupby('reg_name') \
+    cont = (
+        dataset.pivot(values='cand_nb_voix', index='reg_name', columns='cand_nom')
+        .groupby('reg_name')
         .agg(
             pl.col('abstention_nb').min().alias('Abstention'),
-            pl.col('blancs_nb').min().alias('Blank'))
+            pl.col('blancs_nb').min().alias('Blank'),
+        )
+    )
     cont.columns = [c.title() for c in cont.columns]
     cont.index.name = "region"
     cont.columns.name = "candidate"
