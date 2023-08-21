@@ -2,7 +2,7 @@ import functools
 
 import altair as alt
 import numpy as np
-import polars as pl
+from polars import DataFrame
 from sklearn.utils import validation
 
 
@@ -13,19 +13,6 @@ def check_is_fitted(method):
         return method(self, *method_args, **method_kwargs)
 
     return _impl
-
-
-def check_is_dataframe_input(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        X = args[1]  # Assuming the first argument is 'self' or an instance
-        if not isinstance(X, pl.DataFrame):
-            raise ValueError(
-                f"The X argument must be a polars DataFrame, but got {type(X).__name__}"
-            )
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 class EigenvaluesMixin:
@@ -45,13 +32,12 @@ class EigenvaluesMixin:
     @check_is_fitted
     def _eigenvalues_summary(self):
         """Return a summary of the eigenvalues and their importance."""
-        return pl.DataFrame(
+        return DataFrame(
             {
                 "eigenvalue": self.eigenvalues_,
                 r"% of variance": self.percentage_of_variance_,
                 r"% of variance (cumulative)": self.cumulative_percentage_of_variance_,
             },
-            index=pl.RangeIndex(0, len(self.eigenvalues_), name="component"),
         )
 
     @property
