@@ -40,7 +40,7 @@ class FAMD(pca.PCA):
         self.num_cols_ = X.select_dtypes(include=["float"]).columns.tolist()
         if not self.num_cols_:
             raise ValueError("All variables are qualitative: MCA should be used")
-        self.cat_cols_ = X[pl.exclude(self.num_cols_)].columns
+        self.cat_cols_ = X.select(pl.exclude(self.num_cols_)).columns
         if not self.cat_cols_:
             raise ValueError("All variables are quantitative: PCA should be used")
 

@@ -241,7 +241,7 @@ class CA(utils.EigenvaluesMixin):
         dist2_col = (Tc**2).mul(marge_row, axis=0).sum(axis=0)
 
         # Supplementary
-        X_sup = X[pl.exclude(self.active_cols_)]
+        X_sup = X.select(pl.exclude(self.active_cols_))
         X_sup = X_sup.div(X_sup.sum(axis=0), axis=1)
         dist2_col_sup = ((X_sup.sub(marge_row, axis=0)) ** 2).div(marge_row, axis=0).sum(axis=0)
 
