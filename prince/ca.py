@@ -5,6 +5,7 @@ import functools
 import altair as alt
 import numpy as np
 import polars as pl
+from polars import DataFrame, Series
 from scipy import sparse
 from sklearn.utils import check_array
 
@@ -14,7 +15,7 @@ from prince import svd, utils
 def select_active_columns(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "active_cols_") and isinstance(X, pl.DataFrame):
+        if hasattr(self, "active_cols_") and isinstance(X, DataFrame):
             return method(self, X[self.active_cols_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -24,7 +25,7 @@ def select_active_columns(method):
 def select_active_rows(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "active_rows_") and isinstance(X, pl.DataFrame):
+        if hasattr(self, "active_rows_") and isinstance(X, DataFrame):
             return method(self, X.loc[self.active_rows_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -48,7 +49,7 @@ class CA(utils.EigenvaluesMixin):
         self.random_state = random_state
         self.engine = engine
 
-    def fit(self, X: pl.DataFrame, y=None):
+    def fit(self, X: DataFrame, y=None):
         # Check input
         if self.check_input:
             check_array(X)
@@ -66,8 +67,8 @@ class CA(utils.EigenvaluesMixin):
         X = X.astype(float) / np.sum(X)
 
         # Compute row and column masses
-        self.row_masses_ = pl.Series(X.sum(axis=1))
-        self.col_masses_ = pl.Series(X.sum(axis=0))
+        self.row_masses_ = Series(X.sum(axis=1))
+        self.col_masses_ = Series(X.sum(axis=0))
 
         self.active_rows_ = self.row_masses_.index.unique()
         self.active_cols_ = self.col_masses_.index.unique()
@@ -89,7 +90,7 @@ class CA(utils.EigenvaluesMixin):
         # Compute total inertia
         self.total_inertia_ = np.einsum("ij,ji->", S, S.T)
 
-        self.row_contributions_ = pl.DataFrame(
+        self.row_contributions_ = DataFrame(
             sparse.diags(self.row_masses_.values)
             @ (
                 # Same as row_coordinates(X)
@@ -103,7 +104,7 @@ class CA(utils.EigenvaluesMixin):
             / self.eigenvalues_,
         )
 
-        self.column_contributions_ = pl.DataFrame(
+        self.column_contributions_ = DataFrame(
             sparse.diags(self.col_masses_.values)
             @ (
                 # Same as col_coordinates(X)
@@ -126,7 +127,7 @@ class CA(utils.EigenvaluesMixin):
         return np.square(self.svd_.s)
 
     @select_active_columns
-    def row_coordinates(self, X: pl.DataFrame) -> pl.DataFrame:
+    def row_coordinates(self, X: DataFrame) -> DataFrame:
         """The row principal coordinates."""
 
         try:
@@ -140,12 +141,12 @@ class CA(utils.EigenvaluesMixin):
         # Normalise the rows so that they sum up to 1
         X = X / X.sum(axis=1)
 
-        return pl.DataFrame(
+        return DataFrame(
             X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
         )
 
     @select_active_columns
-    def row_cosine_similarities(self, X: pl.DataFrame):
+    def row_cosine_similarities(self, X: DataFrame):
         """Return the cos2 for each row against the dimensions.
 
         The cos2 value gives an indicator of the accuracy of the row projection on the dimension.
@@ -159,7 +160,7 @@ class CA(utils.EigenvaluesMixin):
         return self._row_cosine_similarities(X, F)
 
     @select_active_columns
-    def _row_cosine_similarities(self, X: pl.DataFrame, F):
+    def _row_cosine_similarities(self, X: DataFrame, F):
         # Active
         X_act = X.loc[self.active_rows_]
         X_act = X_act / X_act.sum().sum()
@@ -178,7 +179,7 @@ class CA(utils.EigenvaluesMixin):
         return F**2 / dist2_row.to_numpy()[:, None]
 
     @select_active_rows
-    def column_coordinates(self, X: pl.DataFrame) -> pl.DataFrame:
+    def column_coordinates(self, X: DataFrame) -> DataFrame:
         """The column principal coordinates."""
 
         is_sparse = X.dtypes.apply(pl.api.types.is_sparse).all()
@@ -193,12 +194,12 @@ class CA(utils.EigenvaluesMixin):
         # Transpose and make sure the rows sum up to 1
         X = X.T / X.T.sum(axis=1)
 
-        return pl.DataFrame(
+        return DataFrame(
             X @ sparse.diags(self.row_masses_.to_numpy() ** -0.5) @ self.svd_.U,
         )
 
     @select_active_rows
-    def column_cosine_similarities(self, X: pl.DataFrame):
+    def column_cosine_similarities(self, X: DataFrame):
         """Return the cos2 for each column against the dimensions.
 
         The cos2 value gives an indicator of the accuracy of the column projection on the dimension.
@@ -228,7 +229,7 @@ class CA(utils.EigenvaluesMixin):
         return (G**2).div(dist2_col, axis=0)
 
     @utils.check_is_fitted
-    def plot(self, X: pl.DataFrame, x_component=0, y_component=1, **params):
+    def plot(self, X: DataFrame, x_component=0, y_component=1, **params):
         row_coords = self.row_coordinates(X)
         row_coords.columns = [f"component {i}" for i in row_coords.columns]
         row_coords = row_coords.assign(
