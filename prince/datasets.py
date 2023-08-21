@@ -41,7 +41,7 @@ def load_decathlon():
     """The Decathlon dataset from FactoMineR."""
     decathlon = pl.read_csv(DATASETS_DIR / "decathlon.csv")
     decathlon.columns = ['athlete', *map(str.lower, decathlon.columns[1:])]
-    decathlon = decathlon.with_column(pl.col('athlete').str.title())
+    decathlon = decathlon.with_columns(pl.col('athlete').str.title())
     return decathlon
 
 
