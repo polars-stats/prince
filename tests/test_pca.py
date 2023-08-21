@@ -46,7 +46,7 @@ class TestPCA:
         self.dataset = prince.datasets.load_decathlon()
         self.active = self.dataset
         if self.sup_rows:
-            self.active = self.active.query('competition == "Decastar"')
+            self.active = self.active.filter(pl.col('competition') == "Decastar")
         self.pca = prince.PCA(n_components=n_components, rescale_with_std=self.scale)
         self.pca.fit(
             self.active,
