@@ -20,7 +20,7 @@ runs:
     - name: Install dependencies
       shell: bash
       # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: pip3 install --no-root .
+      run: pip3 install .
 
     - name: Install xarray
       shell: bash
