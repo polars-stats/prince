@@ -4,11 +4,11 @@ import dataclasses
 
 try:
     import fbpca
-
     FBPCA_INSTALLED = True
 except ImportError:
     FBPCA_INSTALLED = False
-import numpy as np
+
+import jax.numpy as np
 import scipy
 from sklearn.utils import extmath
 
@@ -26,17 +26,17 @@ def compute_svd(X, n_components, n_iter, random_state, engine) -> SVD:
     # TODO: support sample weights
 
     # Compute the SVD
-    if engine == "fbpca":
+    if engine == 'fbpca':
         if FBPCA_INSTALLED:
             U, s, V = fbpca.pca(X, k=n_components, n_iter=n_iter)
         else:
             raise ValueError("fbpca is not installed; please install it if you want to use it")
-    elif engine == "scipy":
+    elif engine == 'scipy':
         U, s, V = scipy.linalg.svd(X)
         U = U[:, :n_components]
         s = s[:n_components]
         V = V[:n_components, :]
-    elif engine == "sklearn":
+    elif engine == 'sklearn':
         U, s, V = extmath.randomized_svd(
             X, n_components=n_components, n_iter=n_iter, random_state=random_state
         )
