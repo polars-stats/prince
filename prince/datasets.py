@@ -40,9 +40,8 @@ def load_energy_mix(year=2019, normalize=True) -> pl.DataFrame:
 def load_decathlon():
     """The Decathlon dataset from FactoMineR."""
     decathlon = pl.read_csv(DATASETS_DIR / "decathlon.csv")
-    decathlon.columns = ["athlete", *map(str.lower, decathlon.columns[1:])]
-    decathlon.athlete = decathlon.athlete.apply(str.title)
-    decathlon = decathlon.set_index(["competition", "athlete"])
+    decathlon.columns = ['athlete', *map(str.lower, decathlon.columns[1:])]
+    decathlon = decathlon.with_column(pl.col('athlete').str.title())
     return decathlon
 
 
