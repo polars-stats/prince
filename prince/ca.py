@@ -57,10 +57,7 @@ class CA(utils.EigenvaluesMixin):
         if (X < 0).select(pl.any_horizontal(pl.all())).to_series().any():
             raise ValueError("All values in X should be positive")
 
-        _, row_names, _, col_names = utils.make_labels_and_names(X)
-
-        if isinstance(X, pl.DataFrame):
-            X = X.to_numpy()
+        X = X.to_numpy()
 
         if self.copy:
             X = np.copy(X)
@@ -69,8 +66,8 @@ class CA(utils.EigenvaluesMixin):
         X = X.astype(float) / np.sum(X)
 
         # Compute row and column masses
-        self.row_masses_ = pl.Series(X.sum(axis=1), index=row_names)
-        self.col_masses_ = pl.Series(X.sum(axis=0), index=col_names)
+        self.row_masses_ = pl.Series(X.sum(axis=1))
+        self.col_masses_ = pl.Series(X.sum(axis=0))
 
         self.active_rows_ = self.row_masses_.index.unique()
         self.active_cols_ = self.col_masses_.index.unique()
@@ -131,17 +128,13 @@ class CA(utils.EigenvaluesMixin):
         return np.square(self.svd_.s)
 
     @select_active_columns
-    def row_coordinates(self, X: pl.DataFrame):
+    def row_coordinates(self, X: pl.DataFrame) -> pl.DataFrame:
         """The row principal coordinates."""
 
-        _, row_names, _, _ = utils.make_labels_and_names(X)
-        index_name = X.index.name
-
-        if isinstance(X, pl.DataFrame):
-            try:
-                X = X.sparse.to_coo().astype(float)
-            except AttributeError:
-                X = X.to_numpy()
+        try:
+            X = X.sparse.to_coo().astype(float)
+        except AttributeError:
+            X = X.to_numpy()
 
         if self.copy:
             X = X.copy()
@@ -153,8 +146,7 @@ class CA(utils.EigenvaluesMixin):
             X = X / X.sum(axis=1)
 
         return pl.DataFrame(
-            data=X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
-            index=pl.Index(row_names, name=index_name),
+            X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
         )
 
     @select_active_columns
