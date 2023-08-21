@@ -70,13 +70,14 @@ class PCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, utils.Eigen
         self._check_input(X)
 
         supplementary_columns = supplementary_columns or []
-        active_variables = X.columns.difference(supplementary_columns, sort=False).tolist()
+        active_variables = pl.exclude(supplementary_columns)
+        X_active = X[active_variables]
 
         # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
-        self.feature_names_in_ = active_variables
-        self.n_features_in_ = len(active_variables)
+        self.feature_names_in_ = X_active.columns
+        self.n_features_in_ = len(X_active.columns)
 
-        X_active = X[active_variables].to_numpy(dtype=np.float64, copy=self.copy)
+        X_active = X_active.to_numpy(dtype=np.float64, copy=self.copy)
         if supplementary_columns:
             X_sup = X[supplementary_columns].to_numpy(dtype=np.float64, copy=self.copy)
 
