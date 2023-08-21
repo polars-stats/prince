@@ -37,14 +37,12 @@ class CA(utils.EigenvaluesMixin):
         self,
         n_components=2,
         n_iter=10,
-        copy=True,
         check_input=True,
         random_state=None,
         engine="sklearn",
     ):
         self.n_components = n_components
         self.n_iter = n_iter
-        self.copy = copy
         self.check_input = check_input
         self.random_state = random_state
         self.engine = engine
@@ -59,9 +57,6 @@ class CA(utils.EigenvaluesMixin):
             raise ValueError("All values in X should be positive")
 
         X = X.to_numpy()
-
-        if self.copy:
-            X = np.copy(X)
 
         # Compute the correspondence matrix which contains the relative frequencies
         X = X.astype(float) / np.sum(X)
@@ -135,9 +130,6 @@ class CA(utils.EigenvaluesMixin):
         except AttributeError:
             X = X.to_numpy()
 
-        if self.copy:
-            X = X.copy()
-
         # Normalise the rows so that they sum up to 1
         X = X / X.sum(axis=1)
 
@@ -187,9 +179,6 @@ class CA(utils.EigenvaluesMixin):
             X = X.sparse.to_coo()
         else:
             X = X.to_numpy()
-
-        if self.copy:
-            X = X.copy()
 
         # Transpose and make sure the rows sum up to 1
         X = X.T / X.T.sum(axis=1)
