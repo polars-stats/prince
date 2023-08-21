@@ -21,7 +21,7 @@ def check_is_dataframe_input(func):
         X = args[1]  # Assuming the first argument is 'self' or an instance
         if not isinstance(X, pl.DataFrame):
             raise ValueError(
-                f"The X argument must be a pandas DataFrame, but got {type(X).__name__}"
+                f"The X argument must be a polars DataFrame, but got {type(X).__name__}"
             )
         return func(*args, **kwargs)
 
