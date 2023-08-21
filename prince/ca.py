@@ -1,5 +1,4 @@
 """Correspondence Analysis (CA)"""
-from __future__ import annotations
 
 import functools
 
