@@ -1,0 +1,14 @@
+name: pytest
+
+on: [push]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: actions/checkout@v3
+        uses: actions/checkout@v3
+      - name: actions/install
+        uses: ./.github/actions/install
+      - run: pip3 install pytest
+      - run: python3 -m pytest

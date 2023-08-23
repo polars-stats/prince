@@ -1,8 +1,7 @@
 """Multiple Correspondence Analysis (MCA)"""
-from __future__ import annotations
 
-import numpy as np
-import pandas as pd
+import jax.numpy as np
+import polars as pl
 import sklearn.base
 import sklearn.utils
 
@@ -34,11 +33,10 @@ class MCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, ca.CA):
 
     def _prepare(self, X):
         if self.one_hot:
-            X = pd.get_dummies(X, columns=X.columns)
+            X = pl.get_dummies(X, columns=X.columns)
         return X
 
-    @utils.check_is_dataframe_input
-    def fit(self, X, y=None):
+    def fit(self, X: pl.DataFrame, y=None):
         """Fit the MCA for the dataframe X.
 
         The MCA is computed on the indicator matrix (i.e. `X.get_dummies()`). If some of the columns are already
@@ -63,31 +61,26 @@ class MCA(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin, ca.CA):
 
         return self
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_coordinates(self, X):
+    def row_coordinates(self, X: pl.DataFrame):
         return super().row_coordinates(self._prepare(X))
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def row_cosine_similarities(self, X):
+    def row_cosine_similarities(self, X: pl.DataFrame):
         oh = self._prepare(X)
         return super()._row_cosine_similarities(X=oh, F=super().row_coordinates(oh))
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_coordinates(self, X):
+    def column_coordinates(self, X: pl.DataFrame):
         return super().column_coordinates(self._prepare(X))
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def column_cosine_similarities(self, X):
+    def column_cosine_similarities(self, X: pl.DataFrame):
         oh = self._prepare(X)
         return super()._column_cosine_similarities(X=oh, G=super().column_coordinates(oh))
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def transform(self, X):
+    def transform(self, X: pl.DataFrame):
         """Computes the row principal coordinates of a dataset."""
         if self.check_input:
             sklearn.utils.check_array(X, dtype=[str, np.number])

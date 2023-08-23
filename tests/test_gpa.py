@@ -1,15 +1,12 @@
-from __future__ import annotations
-
-import unittest
-
 import numpy as np
-import pandas as pd
+import polars as pl
+import pytest
 
 import prince
 
 
-class TestGPA(unittest.TestCase):
-    def setUp(self):
+class TestGPA:
+    def setup_method(self, method):
         # Create a list of 2-D circles with different locations and rotations
         n_shapes = 4
         n_points = 12
@@ -31,40 +28,40 @@ class TestGPA(unittest.TestCase):
 
     def test_fit(self):
         gpa = prince.GPA()
-        self.assertIsInstance(gpa.fit(self.shapes), prince.GPA)
+        assert isinstance(gpa.fit(self.shapes), prince.GPA)
 
     def test_fit_random(self):
         gpa = prince.GPA(init="random")
-        self.assertIsInstance(gpa.fit(self.shapes), prince.GPA)
+        assert isinstance(gpa.fit(self.shapes), prince.GPA)
 
     def test_fit_mean(self):
         gpa = prince.GPA(init="mean")
-        self.assertIsInstance(gpa.fit(self.shapes), prince.GPA)
+        assert isinstance(gpa.fit(self.shapes), prince.GPA)
 
     def test_fit_bad_init(self):
         gpa = prince.GPA(init="bad init type")
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             gpa.fit(self.shapes)
 
     def test_fit_bad_input_size(self):
         gpa = prince.GPA()
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             gpa.fit(self.shapes[0])
 
     def test_transform(self):
         gpa = prince.GPA(copy=True)
         aligned_shapes = gpa.fit(self.shapes).transform(self.shapes)
-        self.assertIsInstance(aligned_shapes, np.ndarray)
-        self.assertEqual(self.shapes.shape, aligned_shapes.shape)
+        assert isinstance(aligned_shapes, np.ndarray)
+        assert self.shapes.shape == aligned_shapes.shape
 
     def test_fit_transform_equal(self):
         """In our specific case of all-same-shape circles, the shapes should
         align perfectly."""
         gpa = prince.GPA()
         aligned_shapes = gpa.fit_transform(self.shapes)
-        self.assertIsInstance(aligned_shapes, np.ndarray)
+        assert isinstance(aligned_shapes, np.ndarray)
         np.testing.assert_array_almost_equal(aligned_shapes[:-1], aligned_shapes[1:])
 
     def test_fit_transform_single(self):
@@ -83,11 +80,11 @@ class TestGPA(unittest.TestCase):
 
         gpa = prince.GPA(copy=False)
         gpa.fit(shapes_copy)
-        self.assertRaises(AssertionError, np.testing.assert_array_equal, self.shapes, shapes_copy)
+        pytest.raises(AssertionError, np.testing.assert_array_equal, self.shapes, shapes_copy)
 
     def test_xarray(self):
 
-        points = pd.DataFrame(
+        points = pl.DataFrame(
             data=[
                 [0, 0, 0, 0],
                 [0, 2, 0, 1],

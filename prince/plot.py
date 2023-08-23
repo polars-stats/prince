@@ -1,15 +1,12 @@
-from __future__ import annotations
-
 from collections import OrderedDict
 
-import numpy as np
-from scipy import linalg
+import jax.numpy as np
+from jac.scipy import linalg
 
 GRAY = OrderedDict([("light", "#bababa"), ("dark", "#404040")])
 
 
 def stylize_axis(ax, grid=True):
-
     if grid:
         ax.grid()
 

@@ -1,12 +1,12 @@
 """Correspondence Analysis (CA)"""
-from __future__ import annotations
 
 import functools
 
 import altair as alt
-import numpy as np
-import pandas as pd
-from scipy import sparse
+import jax.numpy as np
+from jax.scipy import sparse
+import polars as pl
+from polars import DataFrame, Series
 from sklearn.utils import check_array
 
 from prince import svd, utils
@@ -15,7 +15,7 @@ from prince import svd, utils
 def select_active_columns(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "active_cols_") and isinstance(X, pd.DataFrame):
+        if hasattr(self, "active_cols_") and isinstance(X, DataFrame):
             return method(self, X[self.active_cols_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -25,7 +25,7 @@ def select_active_columns(method):
 def select_active_rows(method):
     @functools.wraps(method)
     def _impl(self, X=None, *method_args, **method_kwargs):
-        if hasattr(self, "active_rows_") and isinstance(X, pd.DataFrame):
+        if hasattr(self, "active_rows_") and isinstance(X, DataFrame):
             return method(self, X.loc[self.active_rows_], *method_args, **method_kwargs)
         return method(self, X, *method_args, **method_kwargs)
 
@@ -37,42 +37,33 @@ class CA(utils.EigenvaluesMixin):
         self,
         n_components=2,
         n_iter=10,
-        copy=True,
         check_input=True,
         random_state=None,
         engine="sklearn",
     ):
         self.n_components = n_components
         self.n_iter = n_iter
-        self.copy = copy
         self.check_input = check_input
         self.random_state = random_state
         self.engine = engine
 
-    @utils.check_is_dataframe_input
-    def fit(self, X, y=None):
+    def fit(self, X: DataFrame, y=None):
         # Check input
         if self.check_input:
             check_array(X)
 
         # Check all values are positive
-        if (X < 0).any().any():
+        if (X < 0).select(pl.any_horizontal(pl.all())).to_series().any():
             raise ValueError("All values in X should be positive")
 
-        _, row_names, _, col_names = utils.make_labels_and_names(X)
-
-        if isinstance(X, pd.DataFrame):
-            X = X.to_numpy()
-
-        if self.copy:
-            X = np.copy(X)
+        X = X.to_numpy()
 
         # Compute the correspondence matrix which contains the relative frequencies
         X = X.astype(float) / np.sum(X)
 
         # Compute row and column masses
-        self.row_masses_ = pd.Series(X.sum(axis=1), index=row_names)
-        self.col_masses_ = pd.Series(X.sum(axis=0), index=col_names)
+        self.row_masses_ = Series(X.sum(axis=1))
+        self.col_masses_ = Series(X.sum(axis=0))
 
         self.active_rows_ = self.row_masses_.index.unique()
         self.active_cols_ = self.col_masses_.index.unique()
@@ -94,7 +85,7 @@ class CA(utils.EigenvaluesMixin):
         # Compute total inertia
         self.total_inertia_ = np.einsum("ij,ji->", S, S.T)
 
-        self.row_contributions_ = pd.DataFrame(
+        self.row_contributions_ = DataFrame(
             sparse.diags(self.row_masses_.values)
             @ (
                 # Same as row_coordinates(X)
@@ -106,10 +97,9 @@ class CA(utils.EigenvaluesMixin):
                 ** 2
             )
             / self.eigenvalues_,
-            index=self.row_masses_.index,
         )
 
-        self.column_contributions_ = pd.DataFrame(
+        self.column_contributions_ = DataFrame(
             sparse.diags(self.col_masses_.values)
             @ (
                 # Same as col_coordinates(X)
@@ -121,7 +111,6 @@ class CA(utils.EigenvaluesMixin):
                 ** 2
             )
             / self.eigenvalues_,
-            index=self.col_masses_.index,
         )
 
         return self
@@ -132,37 +121,24 @@ class CA(utils.EigenvaluesMixin):
         """Returns the eigenvalues associated with each principal component."""
         return np.square(self.svd_.s)
 
-    @utils.check_is_dataframe_input
     @select_active_columns
-    def row_coordinates(self, X):
+    def row_coordinates(self, X: DataFrame) -> DataFrame:
         """The row principal coordinates."""
 
-        _, row_names, _, _ = utils.make_labels_and_names(X)
-        index_name = X.index.name
-
-        if isinstance(X, pd.DataFrame):
-            try:
-                X = X.sparse.to_coo().astype(float)
-            except AttributeError:
-                X = X.to_numpy()
-
-        if self.copy:
-            X = X.copy()
+        try:
+            X = X.sparse.to_coo().astype(float)
+        except AttributeError:
+            X = X.to_numpy()
 
         # Normalise the rows so that they sum up to 1
-        if isinstance(X, np.ndarray):
-            X = X / X.sum(axis=1)[:, None]
-        else:
-            X = X / X.sum(axis=1)
+        X = X / X.sum(axis=1)
 
-        return pd.DataFrame(
-            data=X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
-            index=pd.Index(row_names, name=index_name),
+        return DataFrame(
+            X @ sparse.diags(self.col_masses_.to_numpy() ** -0.5) @ self.svd_.V.T,
         )
 
-    @utils.check_is_dataframe_input
     @select_active_columns
-    def row_cosine_similarities(self, X):
+    def row_cosine_similarities(self, X: DataFrame):
         """Return the cos2 for each row against the dimensions.
 
         The cos2 value gives an indicator of the accuracy of the row projection on the dimension.
@@ -176,7 +152,7 @@ class CA(utils.EigenvaluesMixin):
         return self._row_cosine_similarities(X, F)
 
     @select_active_columns
-    def _row_cosine_similarities(self, X, F):
+    def _row_cosine_similarities(self, X: DataFrame, F):
         # Active
         X_act = X.loc[self.active_rows_]
         X_act = X_act / X_act.sum().sum()
@@ -189,43 +165,30 @@ class CA(utils.EigenvaluesMixin):
         X_sup = X_sup.div(X_sup.sum(axis=1), axis=0)
         dist2_row_sup = ((X_sup - marge_col) ** 2).div(marge_col, axis=1).sum(axis=1)
 
-        dist2_row = pd.concat((dist2_row, dist2_row_sup))
+        dist2_row = pl.concat((dist2_row, dist2_row_sup))
 
         # Can't use pandas.div method because it doesn't support duplicate indices
         return F**2 / dist2_row.to_numpy()[:, None]
 
-    @utils.check_is_dataframe_input
     @select_active_rows
-    def column_coordinates(self, X):
+    def column_coordinates(self, X: DataFrame) -> DataFrame:
         """The column principal coordinates."""
 
-        _, _, _, col_names = utils.make_labels_and_names(X)
-        index_name = X.columns.name
-
-        if isinstance(X, pd.DataFrame):
-            is_sparse = X.dtypes.apply(pd.api.types.is_sparse).all()
-            if is_sparse:
-                X = X.sparse.to_coo()
-            else:
-                X = X.to_numpy()
-
-        if self.copy:
-            X = X.copy()
+        is_sparse = X.dtypes.apply(pl.api.types.is_sparse).all()
+        if is_sparse:
+            X = X.sparse.to_coo()
+        else:
+            X = X.to_numpy()
 
         # Transpose and make sure the rows sum up to 1
-        if isinstance(X, np.ndarray):
-            X = X.T / X.T.sum(axis=1)[:, None]
-        else:
-            X = X.T / X.T.sum(axis=1)
+        X = X.T / X.T.sum(axis=1)
 
-        return pd.DataFrame(
-            data=X @ sparse.diags(self.row_masses_.to_numpy() ** -0.5) @ self.svd_.U,
-            index=pd.Index(col_names, name=index_name),
+        return DataFrame(
+            X @ sparse.diags(self.row_masses_.to_numpy() ** -0.5) @ self.svd_.U,
         )
 
-    @utils.check_is_dataframe_input
     @select_active_rows
-    def column_cosine_similarities(self, X):
+    def column_cosine_similarities(self, X: DataFrame):
         """Return the cos2 for each column against the dimensions.
 
         The cos2 value gives an indicator of the accuracy of the column projection on the dimension.
@@ -247,16 +210,15 @@ class CA(utils.EigenvaluesMixin):
         dist2_col = (Tc**2).mul(marge_row, axis=0).sum(axis=0)
 
         # Supplementary
-        X_sup = X[X.columns.difference(self.active_cols_, sort=False)]
+        X_sup = X.select(pl.exclude(self.active_cols_))
         X_sup = X_sup.div(X_sup.sum(axis=0), axis=1)
         dist2_col_sup = ((X_sup.sub(marge_row, axis=0)) ** 2).div(marge_row, axis=0).sum(axis=0)
 
-        dist2_col = pd.concat((dist2_col, dist2_col_sup))
+        dist2_col = pl.concat((dist2_col, dist2_col_sup))
         return (G**2).div(dist2_col, axis=0)
 
-    @utils.check_is_dataframe_input
     @utils.check_is_fitted
-    def plot(self, X, x_component=0, y_component=1, **params):
+    def plot(self, X: DataFrame, x_component=0, y_component=1, **params):
         row_coords = self.row_coordinates(X)
         row_coords.columns = [f"component {i}" for i in row_coords.columns]
         row_coords = row_coords.assign(
@@ -270,7 +232,7 @@ class CA(utils.EigenvaluesMixin):
             value=col_coords.index.astype(str),
         )
 
-        coords = pd.concat([row_coords, col_coords])
+        coords = pl.concat([row_coords, col_coords])
         eig = self._eigenvalues_summary.to_dict(orient="index")
 
         return (

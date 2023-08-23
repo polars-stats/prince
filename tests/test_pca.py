@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 import math
 
-import numpy as np
-import pandas as pd
+import jax.numpy as np
+import polars as pl
 import pytest
 import rpy2.robjects as robjects
 import sklearn.utils.estimator_checks
@@ -46,9 +44,9 @@ class TestPCA:
 
         # Fit Prince
         self.dataset = prince.datasets.load_decathlon()
-        self.active = self.dataset.copy()
+        self.active = self.dataset
         if self.sup_rows:
-            self.active = self.active.query('competition == "Decastar"')
+            self.active = self.active.filter(pl.col('competition') == "Decastar")
         self.pca = prince.PCA(n_components=n_components, rescale_with_std=self.scale)
         self.pca.fit(
             self.active,
@@ -128,7 +126,7 @@ class TestPCA:
         # Test againt FactoMineR
         F = load_df_from_R("pca$ind$coord")
         if self.sup_rows:
-            F = pd.concat((F, load_df_from_R("pca$ind.sup$coord")))
+            F = pl.concat((F, load_df_from_R("pca$ind.sup$coord")))
         np.testing.assert_allclose(F.abs(), P.abs())
         # Test against scikit-learn
         S = self.sk_pca.transform(self.dataset[self.pca.feature_names_in_])
@@ -137,7 +135,7 @@ class TestPCA:
     def test_row_cosine_similarities(self):
         F = load_df_from_R("pca$ind$cos2")
         if self.sup_rows:
-            F = pd.concat((F, load_df_from_R("pca$ind.sup$cos2")))
+            F = pl.concat((F, load_df_from_R("pca$ind.sup$cos2")))
         P = self.pca.row_cosine_similarities(self.dataset)
         np.testing.assert_allclose(F, P)
 

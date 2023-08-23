@@ -1,0 +1,39 @@
+name: install
+runs:
+  using: "composite"
+  steps:
+    - name: actions/checkout@v3
+      uses: actions/checkout@v3
+
+    - name: actions/setup-python@v4
+      # id: setup-python
+      uses: actions/setup-python@v4
+      with:
+        python-version: |
+          3.10
+          3.11
+        cache: pip
+
+    # - name: actions/cache@v3
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: .venv
+    #     key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: pip3-install
+      shell: bash
+      # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: pip3 install .
+
+    - name: Install xarray
+      shell: bash
+      run: pip3 install xarray
+
+    - name: Install R
+      uses: r-lib/actions/setup-r@v2
+
+    - name: Install R packages
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        cache-version: 1
+        working-directory: tests

@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import math
 import tempfile
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import pytest
 import rpy2.robjects as robjects
 import sklearn.utils.estimator_checks
@@ -100,7 +98,7 @@ class TestCA:
     def test_row_coords(self, method_name="row_coordinates"):
         F = load_df_from_R(f"ca${self._row_name}$coord")
         if self.sup_rows:
-            F = pd.concat((F, load_df_from_R(f"ca${self._row_name}.sup$coord")))
+            F = pl.concat((F, load_df_from_R(f"ca${self._row_name}.sup$coord")))
 
         method = getattr(self.ca, method_name)
         P = method(self.dataset)
@@ -115,14 +113,14 @@ class TestCA:
     def test_row_cosine_similarities(self):
         F = load_df_from_R(f"ca${self._row_name}$cos2")
         if self.sup_rows:
-            F = pd.concat((F, load_df_from_R(f"ca${self._row_name}.sup$cos2")))
+            F = pl.concat((F, load_df_from_R(f"ca${self._row_name}.sup$cos2")))
         P = self.ca.row_cosine_similarities(self.dataset)
         np.testing.assert_allclose(F, P)
 
     def test_col_coords(self):
         F = load_df_from_R(f"ca${self._col_name}$coord")
         if self.sup_cols:
-            F = pd.concat((F, load_df_from_R(f"ca${self._col_name}.sup$coord")))
+            F = pl.concat((F, load_df_from_R(f"ca${self._col_name}.sup$coord")))
         P = self.ca.column_coordinates(self.dataset)
         np.testing.assert_allclose(F.abs(), P.abs())
 
@@ -134,6 +132,6 @@ class TestCA:
     def test_col_cos2(self):
         F = load_df_from_R(f"ca${self._col_name}$cos2")
         if self.sup_cols:
-            F = pd.concat((F, load_df_from_R(f"ca${self._col_name}.sup$cos2")))
+            F = pl.concat((F, load_df_from_R(f"ca${self._col_name}.sup$cos2")))
         P = self.ca.column_cosine_similarities(self.dataset)
         np.testing.assert_allclose(F, P)

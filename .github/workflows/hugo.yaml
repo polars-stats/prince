@@ -36,24 +36,24 @@ jobs:
       - name: Install Dart Sass Embedded
         run: sudo snap install dart-sass-embedded
 
-      - name: Checkout
+      - name: actions/checkout@v3
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Install environment
-        uses: ./.github/actions/install-env
+        uses: ./.github/actions/install
 
       - name: Execute notebooks
-        run: poetry run jupyter nbconvert --execute --to notebook --inplace docs/content/*.ipynb
+        run: python3 -m jupyter nbconvert --execute --to notebook --inplace docs/content/*.ipynb
 
       - name: Convert notebooks
-        run: poetry run jupyter nbconvert --to markdown docs/content/*.ipynb
+        run: python3 -m jupyter nbconvert --to markdown docs/content/*.ipynb
 
       - name: Clean MarkDown
         run: (for f in docs/content/*.md; do sed -e '/<script/,/<\/script>/{/^$/d;}' ${f} > ${f}.tmp; mv ${f}.tmp ${f}; done)
 
-      - name: Setup Pages
+      - name: actions/configure-pages@v3
         id: pages
         uses: actions/configure-pages@v3
 
@@ -70,8 +70,8 @@ jobs:
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v2
         with:
           path: ./docs/public
 
@@ -83,6 +83,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to GitHub Pages
+      - name: actions/deploy-pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v2
