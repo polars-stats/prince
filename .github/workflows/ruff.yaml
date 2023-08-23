@@ -8,6 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/install
+      - run: pip3 install ruff
       - name: ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names
