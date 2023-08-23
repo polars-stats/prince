@@ -9,7 +9,9 @@ runs:
       # id: setup-python
       uses: actions/setup-python@v4
       with:
-        python-version: ["3.10", "3.11"]
+        python-version: |
+          3.10
+          3.11
 
     # - name: actions/cache@v3
     #   uses: actions/cache@v3
