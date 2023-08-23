@@ -9,7 +9,7 @@ except ImportError:
     FBPCA_INSTALLED = False
 
 import jax.numpy as np
-import scipy
+from jax.scipy import linalg
 from sklearn.utils import extmath
 
 
@@ -32,7 +32,7 @@ def compute_svd(X, n_components, n_iter, random_state, engine) -> SVD:
         else:
             raise ValueError("fbpca is not installed; please install it if you want to use it")
     elif engine == 'scipy':
-        U, s, V = scipy.linalg.svd(X)
+        U, s, V = linalg.svd(X)
         U = U[:, :n_components]
         s = s[:n_components]
         V = V[:n_components, :]
