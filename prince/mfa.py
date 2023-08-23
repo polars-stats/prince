@@ -3,7 +3,7 @@
 import collections
 
 import altair as alt
-import numpy as np
+import jax.numpy as np
 import polars as pl
 import sklearn.utils
 
