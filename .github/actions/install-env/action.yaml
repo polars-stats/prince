@@ -1,23 +1,23 @@
-name: Install env
+name: install env
 runs:
   using: "composite"
   steps:
-    - name: Check out repository
+    - name: actions/checkout@v3
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      id: set-up-python
+    - name: actions/setup-python@v4
+      # id: setup-python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.11"
+        python-version: ["3.10", "3.11"]
 
-    # - name: Load cached virtual env
+    # - name: actions/cache@v3
     #   uses: actions/cache@v3
     #   with:
     #     path: .venv
-    #     key: venv-${{ runner.os }}-${{ steps.set-up-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    #     key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
-    - name: Install dependencies
+    - name: pip3-install
       shell: bash
       # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: pip3 install .
