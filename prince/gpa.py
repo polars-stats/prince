@@ -1,9 +1,8 @@
 """Generalized Procrustes Analysis (GPA)"""
-from __future__ import annotations
 
-import numpy as np
-from scipy.linalg import orthogonal_procrustes
-from scipy.spatial import procrustes
+import jax.numpy as np
+from jax.scipy.linalg import orthogonal_procrustes
+from jax.scipy.spatial import procrustes
 from sklearn import base
 from sklearn import utils as sk_utils
 
