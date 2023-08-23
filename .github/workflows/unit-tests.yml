@@ -14,4 +14,5 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/install-env
+      - run: pip3 install pytest
       - run: python3 -m pytest
