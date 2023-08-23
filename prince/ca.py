@@ -3,10 +3,10 @@
 import functools
 
 import altair as alt
-import numpy as np
+import jax.numpy as np
+from jax.scipy import sparse
 import polars as pl
 from polars import DataFrame, Series
-from scipy import sparse
 from sklearn.utils import check_array
 
 from prince import svd, utils
