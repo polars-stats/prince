@@ -1,6 +1,6 @@
 """Multiple Correspondence Analysis (MCA)"""
 
-import numpy as np
+import jax.numpy as np
 import polars as pl
 import sklearn.base
 import sklearn.utils

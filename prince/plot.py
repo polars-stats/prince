@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
-import numpy as np
-from scipy import linalg
+import jax.numpy as np
+from jac.scipy import linalg
 
 GRAY = OrderedDict([("light", "#bababa"), ("dark", "#404040")])
 

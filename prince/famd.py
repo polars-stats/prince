@@ -1,6 +1,6 @@
 """Factor Analysis of Mixed Data (FAMD)"""
 
-import numpy as np
+import jax.numpy as np
 import polars as pl
 import sklearn.utils
 from sklearn import preprocessing
