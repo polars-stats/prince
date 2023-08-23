@@ -1,4 +1,4 @@
-name: install env
+name: install
 runs:
   using: "composite"
   steps:
