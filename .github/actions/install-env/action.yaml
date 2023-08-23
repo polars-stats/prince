@@ -34,11 +34,3 @@ runs:
       with:
         cache-version: 1
         working-directory: tests
-
-    - name: Install project
-      shell: bash
-      run: pip3 install .
-
-    - name: Activate environment
-      shell: bash
-      run: source $VENV
